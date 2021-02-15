@@ -8,6 +8,7 @@
 
 #look through images in a folder and display them one by one
 import tkinter as tk
+from tkinter import messagebox
 import os
 import cv2
 import time
@@ -99,6 +100,9 @@ for fileName in fileNames:
 print("-------------------------")
 print("Start GUI")
 
+def displayErrorMsg():
+    messagebox.showerror("Error", "Missing a field")
+
 # GUI
 # Save the fields in a text with the same name as the image file
 def save_file():
@@ -111,22 +115,18 @@ def save_file():
         path = os.path.join(manualClassDir, textFileName)
         print("Path to the text file: " + path)
         text = ""
-        for i in range(len(entry_list)):
-            if i == len(entry_list)-1:
-                text += entry_list[i].get()
-            else:
-                text += entry_list[i].get() + ", "
-        print(selectedOption.get())
-        # for e in entry_list:
-        #     text += e.get() + ", "
-        # text = ent_orientation.get()
-        # text += ", " + ent_shape.get()
-        # text += ", " + ent_shapecolor.get()
-        # text += ", " + ent_letter.get()
-        # text += ", " + ent_lettercolor.get()
+        if selectedOption.get() == 1:
+            for i in range(len(entry_list)):
+                if i == len(entry_list)-1:
+                    text += entry_list[i].get()
+                else:
+                    text += entry_list[i].get() + ", "
+        elif selectedOption.get() == 2:
+            text = "emergent target"
         f = open(path, "w")
         f.write(text)
         f.close()
+        return True
         #----------------------------------
         # print(ent_orientation.get())
         # print(ent_shape.get())
@@ -149,39 +149,52 @@ def save_file():
         #     output_file.write(text)
         # window.title(f"Backup Classification - {filepath}")
     else: # Display a popup error message
-        print("Missing a field.")
+        displayErrorMsg()
+        return False
+
+
 
 def check_fields():
-    # Check if every field is entered
-    for e in entry_list:
-        if not e.get():
-            return False
     # Check if "Target" or "Emergent Target" is selected
     if selectedOption.get() == 0:
         return False
-    return True
+    # "Target" is selected
+    elif selectedOption.get() == 1:
+        # Check if every field is entered
+        for e in entry_list:
+            if not e.get():
+                return False
+        return True
+    # "Emergent Target" selected. No need to check other entries
+    elif selectedOption.get() == 2:
+        return True
 
 # Clear all the fields
 def clear_fields():
     for e in entry_list:
         e.delete(0, "end")
+    selectedOption.set(0)
+    # Enable fields when clearing fields after selecting "Emergent Target"
+    # for radioButton in radiobutton_list:
+    #     radioButton.deselect()
 
 # Display the next image
 # Make it do auto-save
 def next_img():
-    clear_fields()
-    global curIndex
-    global numberOfPics
-    global imagePaths
-    curIndex = curIndex + 1
-    if curIndex < numberOfPics-1:
-        img = ImageTk.PhotoImage(Image.open(imagePaths[curIndex]))
-        pic_label.configure(image=img)
-        pic_label.image = img
-    else:
-        curIndex = curIndex - 1
-    # print("Next picture")
-    # print("Current Index: " + str(curIndex))
+    if save_file():
+        clear_fields()
+        global curIndex
+        global numberOfPics
+        global imagePaths
+        curIndex = curIndex + 1
+        if curIndex < numberOfPics-1:
+            img = ImageTk.PhotoImage(Image.open(imagePaths[curIndex]))
+            pic_label.configure(image=img)
+            pic_label.image = img
+        else:
+            curIndex = curIndex - 1
+        # print("Next picture")
+        # print("Current Index: " + str(curIndex))
 
 # Display the previous image
 def prev_img():
@@ -267,9 +280,11 @@ selectedOption = tk.IntVar()
 OPTIONS = ["Target", "Emergent Target"]
 label_list = []
 entry_list = []
+radiobutton_list = []
 CheckbuttonEmergentTarget = tk.IntVar()
 CheckbuttonTarget = tk.IntVar()
 
+# for i in range(len())
 # Target = 1
 TargetButton = tk.Radiobutton(master=fields_form, text=OPTIONS[0],
                                        variable=selectedOption,
@@ -282,6 +297,8 @@ EmergentTargetButton = tk.Radiobutton(master=fields_form, text=OPTIONS[1],
                                        value=2,
                                        command=sel)
 EmergentTargetButton.grid(row=0, column=1, sticky="w")
+radiobutton_list.append(TargetButton)
+radiobutton_list.append(EmergentTargetButton)
 
 for i in range(len(labels)):
     label = tk.Label(master=fields_form, text=labels[i])
